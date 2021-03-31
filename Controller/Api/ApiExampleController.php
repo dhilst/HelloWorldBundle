@@ -24,7 +24,7 @@ class ApiExampleController extends CommonApiController
         $campaignModel = $this->getModel("campaign.event");
 
         // Trigger the checkpoint event
-        //$campaignModel->triggerEvent('nisi.decision_hit', []);
+        $campaignModel->triggerEvent('nisi.decision_hit', []);
 
         // Return HTTP 200
         return $this->handleView($this->view("Ok", 200));
