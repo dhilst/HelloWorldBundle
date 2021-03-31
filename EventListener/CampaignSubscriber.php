@@ -4,6 +4,7 @@
 namespace MauticPlugin\HelloWorldBundle\EventListener;
 
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Mautic\CoreBundle\EventListener\CommonSubscriber;
 use Mautic\CampaignBundle\Event as Events;
 use Mautic\CampaignBundle\CampaignEvents;
@@ -14,7 +15,7 @@ use MauticPlugin\HelloWorldBundle\HelloWorldEvents;
 /**
  * Class CampaignSubscriber
  */
-class CampaignSubscriber extends CommonSubscriber
+class CampaignSubscriber implements EventSubscriberInterface
 {
     /**
      * @return array
@@ -24,6 +25,7 @@ class CampaignSubscriber extends CommonSubscriber
         return array(
             CampaignEvents::CAMPAIGN_ON_BUILD => array('onCampaignBuild', 0),
             HelloWorldEvents::BLASTOFF        => array('executeCampaignAction', 0),
+            HelloWorldEvents::DECISION => array('onDecision', 0),
         );
     }
 
@@ -44,6 +46,17 @@ class CampaignSubscriber extends CommonSubscriber
                 'formType'        => false,
             )
         );
+
+        // Register custom action
+        $event->addDecision(
+            'helloworld.decision_example',
+            array(
+                'eventName'       => HelloWorldEvents::DECISION,
+                'label'           => 'HelloWorld - Decision',
+                'description'     => 'Decision Example',
+                'formType'        => false,
+            )
+        );
     }
 
     /**
@@ -57,5 +70,10 @@ class CampaignSubscriber extends CommonSubscriber
         $now = date("c");
         $this->logger->info("==> BLASTOFF $now");
         $event->setResult(false);
+    }
+
+    public function onDecsision(CampaignExecutionEvent $event)
+    {
+        $event->setResult(true);
     }
 }

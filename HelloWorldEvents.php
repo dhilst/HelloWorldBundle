@@ -9,5 +9,5 @@ namespace MauticPlugin\HelloWorldBundle;
 final class HelloWorldEvents
 {
     const BLASTOFF        = 'helloworld.bastoff';
+    const DECISION = 'hellowolrd.decision';
 }
-
