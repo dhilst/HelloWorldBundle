@@ -3,20 +3,28 @@
 
 namespace MauticPlugin\HelloWorldBundle\EventListener;
 
+use Doctrine\ORM\EntityManager;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Mautic\CoreBundle\EventListener\CommonSubscriber;
 use Mautic\CampaignBundle\Event as Events;
 use Mautic\CampaignBundle\CampaignEvents;
 use Mautic\CampaignBundle\Event\CampaignExecutionEvent;
+use Mautic\CampaignBundle\Entity\Event as CampaignEvent;
 
 use MauticPlugin\HelloWorldBundle\HelloWorldEvents;
+use MauticPlugin\HelloWorldBundle\Form\Type\ExampleDecisionType;
 
 /**
  * Class CampaignSubscriber
  */
 class CampaignSubscriber implements EventSubscriberInterface
 {
+    public function __construct(EntityManager $em)
+    {
+        $this->em = $em;
+    }
+
     /**
      * @return array
      */
@@ -26,12 +34,8 @@ class CampaignSubscriber implements EventSubscriberInterface
             CampaignEvents::CAMPAIGN_ON_BUILD => array('onCampaignBuild', 0),
             HelloWorldEvents::BLASTOFF        => array('executeCampaignAction', 0),
             HelloWorldEvents::DECISION => array('onDecision', 0),
-            HelloWorldEvents::DECISION_HIT => array('onDecisionHit', 0),
         );
-    }
-
-    /**
-     * Add campaign decision and actions
+    } /** Add campaign decision and actions
      *
      * @param Events\CampaignBuilderEvent $event
      */
@@ -55,7 +59,7 @@ class CampaignSubscriber implements EventSubscriberInterface
                 'eventName'       => HelloWorldEvents::DECISION,
                 'label'           => 'HelloWorld - Decision',
                 'description'     => 'Decision Example',
-                'formType'        => false,
+                'formType'        => ExampleDecisionType::class,
             )
         );
     }
@@ -73,14 +77,20 @@ class CampaignSubscriber implements EventSubscriberInterface
         $event->setResult(false);
     }
 
+    // Decision is not executed on mautic:campaign:trigger. It's executed (in this case)
+    // during the  $realTimeExecutioner->execute("helloworld.decision_example_hit", [], 'hellochannel', $channelId);
+    // call in ApiExampleController. We need to get the channel and compare with logger channel call
+    // $event->setResult(true) if the event were triggerred, or $event->setResult(false) when was not triggered
     public function onDecision(CampaignExecutionEvent $event)
     {
-        $event->setResult(true);
-    }
-
-    public function onDecisionHit($event)
-    {
-        echo "IT WORKS!\n";
-        var_dump($event);
+        $lead = $event->getLead();
+        $campaignEvent = $this->em->getReference(CampaignEvent::class, $event->getEvent()["id"]);
+        $debtorId = $lead->getFieldValue("debtorid");
+        $checkpoint = $campaignEvent->getProperties()["checkpoint"];
+        $channelId = $debtorId.$checkpoint;
+        $log = $event->getLog();
+        $logChannel = $log->getChannel();
+        $logChannelId = $log->getChannelId();
+        return $event->setResult("hellochannel" === $logChannel && $channelId === $logChannelId);
     }
 }

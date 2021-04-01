@@ -18,14 +18,15 @@ class ApiExampleController extends CommonApiController
     {
         $req = $this->request->request; // POST parameters
 
-        if (!$req->has("debtorid")) {
-            return $this->handleView($this->view("Missing debtorid", 400));
+        if (!$req->has("debtorid") || !$req->has("checkpoint")) {
+            return $this->handleView($this->view("Missing debtorid or checkpoint", 400));
         }
 
         // Get the request parameters
         $parms = $req->all();
         $debtorId = $parms["debtorid"];
-
+        $checkpoint  = $parms["checkpoint"];
+        $channelId = $debtorId.$checkpoint;
         $tracker = $this->get("mautic.tracker.contact");
         $leadRepo = $this->get("mautic.lead.repository.lead");
         $leads = $leadRepo->getLeadsByFieldValue("debtorid", $debtorId);
@@ -38,7 +39,7 @@ class ApiExampleController extends CommonApiController
         $tracker->setTrackedContact($lead);
 
         $realTimeExecutioner = $this->get("mautic.campaign.executioner.realtime");
-        $realTimeExecutioner->execute("helloworld.decision_example_hit", [], 'hellochannel', $debtorId);
+        $realTimeExecutioner->execute("helloworld.decision_example_hit", [], 'hellochannel', $channelId);
 
         // Return HTTP 200
         return $this->handleView($this->view("Ok", 200));
