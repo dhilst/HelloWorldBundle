@@ -26,6 +26,7 @@ class CampaignSubscriber implements EventSubscriberInterface
             CampaignEvents::CAMPAIGN_ON_BUILD => array('onCampaignBuild', 0),
             HelloWorldEvents::BLASTOFF        => array('executeCampaignAction', 0),
             HelloWorldEvents::DECISION => array('onDecision', 0),
+            HelloWorldEvents::DECISION_HIT => array('onDecisionHit', 0),
         );
     }
 
@@ -49,7 +50,7 @@ class CampaignSubscriber implements EventSubscriberInterface
 
         // Register custom action
         $event->addDecision(
-            'helloworld.decision_example',
+            'helloworld.decision_example_hit',
             array(
                 'eventName'       => HelloWorldEvents::DECISION,
                 'label'           => 'HelloWorld - Decision',
@@ -64,7 +65,7 @@ class CampaignSubscriber implements EventSubscriberInterface
      *
      * @param CampaignExecutionEvent $event
      */
-    public function executeCampaignAction (CampaignExecutionEvent $event)
+    public function executeCampaignAction(CampaignExecutionEvent $event)
     {
         // Do blastoff
         $now = date("c");
@@ -72,8 +73,14 @@ class CampaignSubscriber implements EventSubscriberInterface
         $event->setResult(false);
     }
 
-    public function onDecsision(CampaignExecutionEvent $event)
+    public function onDecision(CampaignExecutionEvent $event)
     {
         $event->setResult(true);
+    }
+
+    public function onDecisionHit($event)
+    {
+        echo "IT WORKS!\n";
+        var_dump($event);
     }
 }

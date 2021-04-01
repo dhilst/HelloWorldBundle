@@ -4,6 +4,7 @@ namespace MauticPlugin\HelloWorldBundle\Controller\Api;
 
 use FOS\RestBundle\Util\Codes;
 use Mautic\ApiBundle\Controller\CommonApiController;
+use Mauitc\LeadBundle\Entity\Lead;
 
 class ApiExampleController extends CommonApiController
 {
@@ -17,14 +18,27 @@ class ApiExampleController extends CommonApiController
     {
         $req = $this->request->request; // POST parameters
 
+        if (!$req->has("debtorid")) {
+            return $this->handleView($this->view("Missing debtorid", 400));
+        }
+
         // Get the request parameters
         $parms = $req->all();
-        // Get campaign model, we need this to trigger
-        // the event
-        $campaignModel = $this->getModel("campaign.event");
+        $debtorId = $parms["debtorid"];
 
-        // Trigger the checkpoint event
-        $campaignModel->triggerEvent('nisi.decision_hit', []);
+        $tracker = $this->get("mautic.tracker.contact");
+        $leadRepo = $this->get("mautic.lead.repository.lead");
+        $leads = $leadRepo->getLeadsByFieldValue("debtorid", $debtorId);
+
+        if (empty($leads)) {
+            return $this->handleView($this->view("Lead not found", 204));
+        }
+
+        $lead = reset($leads); // reset return the first item on array if present
+        $tracker->setTrackedContact($lead);
+
+        $realTimeExecutioner = $this->get("mautic.campaign.executioner.realtime");
+        $realTimeExecutioner->execute("helloworld.decision_example_hit", [], 'hellochannel', $debtorId);
 
         // Return HTTP 200
         return $this->handleView($this->view("Ok", 200));
