@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace MauticPlugin\HelloWorldBundle\Controller\Api;
 
 use FOS\RestBundle\Util\Codes;
@@ -18,28 +20,24 @@ class ApiExampleController extends CommonApiController
     {
         $req = $this->request->request; // POST parameters
 
-        if (!$req->has("debtorid") || !$req->has("checkpoint")) {
-            return $this->handleView($this->view("Missing debtorid or checkpoint", 400));
+        if (!$req->has("leadId") || !$req->has("myparameter")) {
+            return $this->handleView($this->view("Missing leadId or myparameter", 400));
         }
 
         // Get the request parameters
         $parms = $req->all();
-        $debtorId = $parms["debtorid"];
-        $checkpoint  = $parms["checkpoint"];
-        $channelId = $debtorId.$checkpoint;
+        $passthrough = isset($parms["customParameters"]) ? $parms["customParameters"] : null;
+        $leadId = $parms["leadId"];
+        $myparameter  = $parms["myparameter"];
+        $channelId = $leadId.$myparameter;
         $tracker = $this->get("mautic.tracker.contact");
         $leadRepo = $this->get("mautic.lead.repository.lead");
-        $leads = $leadRepo->getLeadsByFieldValue("debtorid", $debtorId);
+        $lead = $leadRepo->find($leadId);
 
-        if (empty($leads)) {
-            return $this->handleView($this->view("Lead not found", 204));
-        }
-
-        $lead = reset($leads); // reset return the first item on array if present
         $tracker->setTrackedContact($lead);
 
         $realTimeExecutioner = $this->get("mautic.campaign.executioner.realtime");
-        $realTimeExecutioner->execute("helloworld.decision_example_hit", [], 'hellochannel', $channelId);
+        $realTimeExecutioner->execute("helloworld.decision_example_hit", $passthrough, 'hellochannel', $channelId);
 
         // Return HTTP 200
         return $this->handleView($this->view("Ok", 200));

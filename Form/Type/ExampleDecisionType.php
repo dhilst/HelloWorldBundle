@@ -19,8 +19,8 @@ class ExampleDecisionType extends AbstractType
 {
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
-        $builder->add("checkpoint", NumberType::class, [
-            "label"      => "plugin.nisi.checkpoint",
+        $builder->add("myparameter", NumberType::class, [
+            "label"      => "plugin.helloworld.myparameter",
             "attr"       => ["class" => "form-control"],
             "label_attr" => ["class" => "control-label"],
         ]);

@@ -18,9 +18,6 @@ return array(
         'events' => array(
             'plugin.helloworld.campaignbundle.subscriber' => array(
                 'class' => 'MauticPlugin\HelloWorldBundle\EventListener\CampaignSubscriber',
-                'arguments' => [
-                                        'doctrine.orm.entity_manager',
-                ],
             )
         ),
     ),

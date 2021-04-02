@@ -1,5 +1,6 @@
 <?php
-// plugins/HelloWorldBundle/EventListener/CampaignSubscriber.php
+
+declare(strict_types=1);
 
 namespace MauticPlugin\HelloWorldBundle\EventListener;
 
@@ -20,11 +21,6 @@ use MauticPlugin\HelloWorldBundle\Form\Type\ExampleDecisionType;
  */
 class CampaignSubscriber implements EventSubscriberInterface
 {
-    public function __construct(EntityManager $em)
-    {
-        $this->em = $em;
-    }
-
     /**
      * @return array
      */
@@ -46,8 +42,8 @@ class CampaignSubscriber implements EventSubscriberInterface
             'helloworld.send_offworld',
             array(
                 'eventName'       => HelloWorldEvents::BLASTOFF,
-                'label'           => 'HelloWorld - Blast off',
-                'description'     => 'Blasting off',
+                'label'           => 'plugin.helloworld.blastoff',
+                'description'     => 'plugin.helloworld.blastoff.desc',
                 'formType'        => false,
             )
         );
@@ -57,8 +53,8 @@ class CampaignSubscriber implements EventSubscriberInterface
             'helloworld.decision_example_hit',
             array(
                 'eventName'       => HelloWorldEvents::DECISION,
-                'label'           => 'HelloWorld - Decision',
-                'description'     => 'Decision Example',
+                'label'           => 'plugin.helloworld.decision',
+                'description'     => 'plugin.helloworld.decision.desc',
                 'formType'        => ExampleDecisionType::class,
             )
         );
@@ -84,13 +80,24 @@ class CampaignSubscriber implements EventSubscriberInterface
     public function onDecision(CampaignExecutionEvent $event)
     {
         $lead = $event->getLead();
-        $campaignEvent = $this->em->getReference(CampaignEvent::class, $event->getEvent()["id"]);
-        $debtorId = $lead->getFieldValue("debtorid");
-        $checkpoint = $campaignEvent->getProperties()["checkpoint"];
-        $channelId = $debtorId.$checkpoint;
+        $leadId = $lead->getId();
+
+        // These are the ExampleDecisionType form inputs
+        $properties = $event->getConfig()["properties"];
+
+        // This is the My parameter input at ExampleDecisionType on
+        $myparameter = $properties["myparameter"];
+        $channelId = $leadId.$myparameter;
+
+        // These are setted before the event is built
         $log = $event->getLog();
         $logChannel = $log->getChannel();
         $logChannelId = $log->getChannelId();
+
+        // This is custom parameters passed in the request, it can be retrieved
+        // by $event->getPassThrough() method. I'm not using it here, it's just
+        // an example, it may be useful
+        $customParameters = $event->getPassThrough();
         return $event->setResult("hellochannel" === $logChannel && $channelId === $logChannelId);
     }
 }
